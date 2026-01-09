@@ -2,48 +2,41 @@ import json
 import os
 from decimal import Decimal
 
-import boto3  # AWS SDK
+import boto3
 import requests
-from dotenv import load_dotenv
 
-## for running locally
+# Initialize DynamoDB outside the handler (Best Practice for connection reuse)
+dynamodb = boto3.resource("dynamodb")
+TABLE_NAME = os.environ.get("TABLE_NAME", "LeagueMatches")
+table = dynamodb.Table(TABLE_NAME)
 
-load_dotenv()
-API_KEY = os.getenv("RIOT_API_KEY")
-
-# Initialize DynamoDB
-dynamodb = boto3.resource("dynamodb", region_name="us-west-1")
-table = dynamodb.Table("LeagueMatches")
+# Riot API Key (Will be set in AWS Console/Terraform)
+API_KEY = os.environ.get("RIOT_API_KEY")
 
 
-## get config details
 def load_config():
+    # In Lambda, files in the zip are in the "current directory"
     with open("friends_config.json", "r") as f:
         return json.load(f)
 
 
-## need puuids; use gamer tags in config file to acquire
 def load_puuids():
     with open("friends_puuids.json", "r") as f:
         return json.load(f)
 
 
 def save_to_dynamo(match_data):
-    """
-    Pushes a single match record to DynamoDB.
-    Convert the dictionary to a 'Decimal' friendly format for DynamoDB.
-    """
-    # Convert floats to Decimals (DynamoDB requirement)
+    # (Same code as before)
     item = json.loads(json.dumps(match_data), parse_float=Decimal)
-
     try:
         table.put_item(Item=item)
-        print(f"Successfully saved Match: {item['matchId']}")
+        print(f"Saved: {item['matchId']}")
     except Exception as e:
         print(f"Error saving to DynamoDB: {e}")
 
 
-def get_match_ids(puuid, routing_region, count=5):
+def get_match_ids(puuid, routing_region, count):
+    # (Same code as before, just remove 'load_dotenv')
     url = f"https://{routing_region}.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids"
     params = {"count": count}
     headers = {"X-Riot-Token": API_KEY}
@@ -124,27 +117,28 @@ def get_match_details(match_id, routing_region, target_puuid):
     return None
 
 
-def main():
+def lambda_handler(event, context):
+    print("Starting League Crawler...")
+
     config = load_config()
     friends_list = load_puuids()
     routing_region = config["settings"]["region"]
     match_limit = config["settings"]["match_count"]
 
+    matches_processed = 0
+
     for name_tag, puuid in friends_list.items():
-        print(f"Checking for new matches for {name_tag}...")
+        print(f"Checking {name_tag}...")
         match_ids = get_match_ids(puuid, routing_region, count=match_limit)
 
         for mid in match_ids:
-            # Step 1: Check if match already exists in Dynamo to save API calls
-            # (We will add this optimization once the basic version works!)
-
-            # Step 2: Fetch the rich stats we organized
+            # Note: You'll need to copy the full get_match_details logic here
             stats = get_match_details(mid, routing_region, puuid)
-
             if stats:
-                # Step 3: Push to AWS!
                 save_to_dynamo(stats)
+                matches_processed += 1
 
-
-if __name__ == "__main__":
-    main()
+    return {
+        "statusCode": 200,
+        "body": json.dumps(f"Successfully processed {matches_processed} matches"),
+    }
