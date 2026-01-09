@@ -1,0 +1,237 @@
+{
+    "Werras#NA1": [
+        {
+            "matchId": "NA1_5457658238",
+            "champion": "Trundle",
+            "kills": 10,
+            "deaths": 7,
+            "assists": 12,
+            "win": false,
+            "kda": 3.14
+        },
+        {
+            "matchId": "NA1_5457645313",
+            "champion": "Pantheon",
+            "kills": 3,
+            "deaths": 6,
+            "assists": 11,
+            "win": true,
+            "kda": 2.33
+        },
+        {
+            "matchId": "NA1_5457622062",
+            "champion": "Volibear",
+            "kills": 8,
+            "deaths": 8,
+            "assists": 20,
+            "win": false,
+            "kda": 3.5
+        },
+        {
+            "matchId": "NA1_5457594710",
+            "champion": "Graves",
+            "kills": 13,
+            "deaths": 13,
+            "assists": 32,
+            "win": true,
+            "kda": 3.46
+        },
+        {
+            "matchId": "NA1_5456837451",
+            "champion": "Teemo",
+            "kills": 15,
+            "deaths": 16,
+            "assists": 40,
+            "win": true,
+            "kda": 3.44
+        }
+    ],
+    "IamTheMuffinKing#NA1": [
+        {
+            "matchId": "NA1_5457658238",
+            "champion": "Ekko",
+            "kills": 11,
+            "deaths": 8,
+            "assists": 18,
+            "win": false,
+            "kda": 3.62
+        },
+        {
+            "matchId": "NA1_5457645313",
+            "champion": "FiddleSticks",
+            "kills": 7,
+            "deaths": 5,
+            "assists": 14,
+            "win": true,
+            "kda": 4.2
+        },
+        {
+            "matchId": "NA1_5457622062",
+            "champion": "Malzahar",
+            "kills": 7,
+            "deaths": 12,
+            "assists": 10,
+            "win": false,
+            "kda": 1.42
+        },
+        {
+            "matchId": "NA1_5457594710",
+            "champion": "Viktor",
+            "kills": 9,
+            "deaths": 13,
+            "assists": 41,
+            "win": true,
+            "kda": 3.85
+        },
+        {
+            "matchId": "NA1_5456837451",
+            "champion": "Janna",
+            "kills": 5,
+            "deaths": 10,
+            "assists": 62,
+            "win": true,
+            "kda": 6.7
+        }
+    ],
+    "Woah Its Cutty#NA1": [
+        {
+            "matchId": "NA1_5456837451",
+            "champion": "Rammus",
+            "kills": 8,
+            "deaths": 18,
+            "assists": 44,
+            "win": true,
+            "kda": 2.89
+        },
+        {
+            "matchId": "NA1_5456822021",
+            "champion": "Fizz",
+            "kills": 13,
+            "deaths": 8,
+            "assists": 16,
+            "win": true,
+            "kda": 3.62
+        },
+        {
+            "matchId": "NA1_5456794200",
+            "champion": "FiddleSticks",
+            "kills": 10,
+            "deaths": 15,
+            "assists": 31,
+            "win": false,
+            "kda": 2.73
+        },
+        {
+            "matchId": "NA1_5454315553",
+            "champion": "Zac",
+            "kills": 6,
+            "deaths": 0,
+            "assists": 16,
+            "win": true,
+            "kda": 22.0
+        },
+        {
+            "matchId": "NA1_5454280562",
+            "champion": "Akali",
+            "kills": 8,
+            "deaths": 14,
+            "assists": 12,
+            "win": true,
+            "kda": 1.43
+        }
+    ],
+    "ISpoonAfterIFork#NA1": [
+        {
+            "matchId": "NA1_5457645313",
+            "champion": "Ziggs",
+            "kills": 2,
+            "deaths": 4,
+            "assists": 21,
+            "win": true,
+            "kda": 5.75
+        },
+        {
+            "matchId": "NA1_5457622062",
+            "champion": "Smolder",
+            "kills": 7,
+            "deaths": 8,
+            "assists": 21,
+            "win": false,
+            "kda": 3.5
+        },
+        {
+            "matchId": "NA1_5457594710",
+            "champion": "Lux",
+            "kills": 10,
+            "deaths": 3,
+            "assists": 43,
+            "win": true,
+            "kda": 17.67
+        },
+        {
+            "matchId": "NA1_5456837451",
+            "champion": "Smolder",
+            "kills": 28,
+            "deaths": 14,
+            "assists": 37,
+            "win": true,
+            "kda": 4.64
+        },
+        {
+            "matchId": "NA1_5456822021",
+            "champion": "Thresh",
+            "kills": 7,
+            "deaths": 4,
+            "assists": 30,
+            "win": true,
+            "kda": 9.25
+        }
+    ],
+    "Grantalicious#NA1": [
+        {
+            "matchId": "NA1_5454315553",
+            "champion": "Caitlyn",
+            "kills": 8,
+            "deaths": 0,
+            "assists": 9,
+            "win": true,
+            "kda": 17.0
+        },
+        {
+            "matchId": "NA1_5454280562",
+            "champion": "Warwick",
+            "kills": 7,
+            "deaths": 11,
+            "assists": 22,
+            "win": true,
+            "kda": 2.64
+        },
+        {
+            "matchId": "NA1_5454255530",
+            "champion": "Karma",
+            "kills": 7,
+            "deaths": 8,
+            "assists": 26,
+            "win": false,
+            "kda": 4.12
+        },
+        {
+            "matchId": "NA1_5443248299",
+            "champion": "Jax",
+            "kills": 11,
+            "deaths": 15,
+            "assists": 30,
+            "win": false,
+            "kda": 2.73
+        },
+        {
+            "matchId": "NA1_5443228196",
+            "champion": "Annie",
+            "kills": 7,
+            "deaths": 10,
+            "assists": 25,
+            "win": true,
+            "kda": 3.2
+        }
+    ]
+}

@@ -1,0 +1,13 @@
+{
+    "friends": [
+        {"name": "Werras", "tag": "NA1"},
+        {"name": "IamTheMuffinKing", "tag": "NA1"},
+        {"name": "Woah Its Cutty", "tag": "NA1"},
+        {"name": "ISpoonAfterIFork", "tag": "NA1"},
+        {"name": "Grantalicious", "tag": "NA1"}
+    ],
+    "settings": {
+        "region": "americas",
+        "match_count": 5
+    }
+}

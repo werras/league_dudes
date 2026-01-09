@@ -1,0 +1,15 @@
+
+# Python folders
+venv/
+__pycache__/
+
+# Local environment variables
+.env
+
+# AWS folders
+.aws-sam/
+.aws/
+
+#terraform
+terraform.tfstate*
+.terraform/
