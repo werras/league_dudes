@@ -13,44 +13,16 @@ locals {
 }
 
 # ==============================================================================
-# Archive/zip lambda code
+# Data Sources
 # ==============================================================================
 data "archive_file" "lambda_zip" {
   type        = "zip"
-  
   source_dir  = "${path.module}/../backend" 
-  
   output_path = "${path.module}/../deployment.zip" 
 }
 
-
-# ==============================================================================
-# Secrets Manager (Data Source)
-# ==============================================================================
 data "aws_secretsmanager_secret" "riot_dashboard_secret" {
   name = "prod/league-dudes/config" 
-}
-
-# ==============================================================================
-# DynamoDB Tables
-# ==============================================================================
-resource "aws_dynamodb_table" "league_matches" {
-  name         = "LeagueMatches"
-  billing_mode = "PAY_PER_REQUEST"
-  hash_key     = "matchId" 
-  range_key    = "puuid"   
-
-  attribute {
-    name = "matchId"
-    type = "S"
-  }
-
-  attribute {
-    name = "puuid"
-    type = "S"
-  }
-
-  tags = local.common_tags
 }
 
 # ==============================================================================
@@ -88,7 +60,8 @@ resource "aws_iam_role_policy" "lambda_main_policy" {
           "dynamodb:PutItem",
           "dynamodb:GetItem",
           "dynamodb:Query",
-          "dynamodb:UpdateItem"
+          "dynamodb:UpdateItem",
+          "dynamodb:Scan"
         ]
         Resource = aws_dynamodb_table.league_matches.arn
       },
@@ -129,8 +102,31 @@ resource "aws_iam_role_policy_attachment" "attach_secrets_policy" {
 }
 
 # ==============================================================================
-# Lambda Function
+# Database (DynamoDB)
 # ==============================================================================
+resource "aws_dynamodb_table" "league_matches" {
+  name         = "LeagueMatches"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "matchId" 
+  range_key    = "puuid"   
+
+  attribute {
+    name = "matchId"
+    type = "S"
+  }
+
+  attribute {
+    name = "puuid"
+    type = "S"
+  }
+
+  tags = local.common_tags
+}
+
+# ==============================================================================
+# Compute (Lambda Functions)
+# ==============================================================================
+# 1. The Poller Function
 resource "aws_lambda_function" "league_poller" {
   function_name = "LeagueMatchPoller"
   
@@ -147,6 +143,29 @@ resource "aws_lambda_function" "league_poller" {
     variables = {
       TABLE_NAME  = aws_dynamodb_table.league_matches.name
       SECRET_NAME = data.aws_secretsmanager_secret.riot_dashboard_secret.name
+    }
+  }
+
+  tags = local.common_tags
+}
+
+# 2. The Reader Function
+resource "aws_lambda_function" "league_dudes_reader" {
+  function_name = "LeagueDudesReader"
+  
+  # Use the same zip file (it contains both scripts now)
+  filename         = data.archive_file.lambda_zip.output_path
+  source_code_hash = data.archive_file.lambda_zip.output_base64sha256
+
+  handler     = "get_matches.lambda_handler" 
+  runtime     = "python3.9"
+  role        = aws_iam_role.lambda_exec.arn 
+  timeout     = 10
+
+  environment {
+    variables = {
+      TABLE_NAME = aws_dynamodb_table.league_matches.name
+      MIN_GAME_DATE = "2026-01-01" # can change here or in AWS console
     }
   }
 
@@ -185,8 +204,71 @@ resource "aws_lambda_permission" "allow_eventbridge" {
 }
 
 # ==============================================================================
+# API Gateway (HTTP API)
+# ==============================================================================
+resource "aws_apigatewayv2_api" "league_dudes_api" {
+  name          = "league_dudes_dashboard_api"
+  protocol_type = "HTTP"
+  
+  cors_configuration {
+    allow_origins = ["*"] 
+    allow_methods = ["GET", "OPTIONS"]
+    allow_headers = ["Content-Type"]
+  }
+
+  tags = local.common_tags
+}
+
+# Stage
+resource "aws_apigatewayv2_stage" "league_dudes_default_stage" {
+  api_id      = aws_apigatewayv2_api.league_dudes_api.id
+  name        = "$default"
+  auto_deploy = true
+}
+
+# Integration (Connects API Gateway -> Lambda)
+resource "aws_apigatewayv2_integration" "league_dudes_reader_integration" {
+  api_id           = aws_apigatewayv2_api.league_dudes_api.id
+  integration_type = "AWS_PROXY"
+  
+  # Updated reference to the renamed lambda resource
+  integration_uri    = aws_lambda_function.league_dudes_reader.invoke_arn
+  integration_method = "POST" 
+  payload_format_version = "2.0"
+}
+
+# Route (The URL path)
+resource "aws_apigatewayv2_route" "league_dudes_get_matches" {
+  api_id    = aws_apigatewayv2_api.league_dudes_api.id
+  route_key = "GET /matches"
+  
+  # Updated reference to the renamed integration resource
+  target    = "integrations/${aws_apigatewayv2_integration.league_dudes_reader_integration.id}"
+}
+
+# Permission (Allow API Gateway to call Lambda)
+resource "aws_lambda_permission" "league_dudes_api_gw_permission" {
+  statement_id  = "AllowExecutionFromAPIGateway"
+  action        = "lambda:InvokeFunction"
+  
+  # Updated reference to the renamed lambda resource
+  function_name = aws_lambda_function.league_dudes_reader.function_name
+  principal     = "apigateway.amazonaws.com"
+  
+  # Updated reference to the renamed API resource
+  source_arn    = "${aws_apigatewayv2_api.league_dudes_api.execution_arn}/*/*"
+}
+
+
+# ==============================================================================
 # Outputs
 # ==============================================================================
 output "dynamodb_table_arn" {
   value = aws_dynamodb_table.league_matches.arn
+}
+
+output "api_endpoint" {
+  description = "The public URL for your API"
+  # Updated reference
+  value       = "${aws_apigatewayv2_api.league_dudes_api.api_endpoint}/matches"
 }

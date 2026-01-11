@@ -1,3 +1,4 @@
+import datetime
 import json
 from decimal import Decimal
 
@@ -50,6 +51,11 @@ def get_match_details(match_id, routing_region, target_puuid, api_key):
     info = data.get("info", {})
     participants = info.get("participants", [])
 
+    creation_ms = info.get("gameCreation", 0)
+    game_date_str = datetime.datetime.fromtimestamp(creation_ms / 1000).strftime(
+        "%Y-%m-%d"
+    )
+
     for p in participants:
         if p["puuid"] == target_puuid:
 
@@ -57,6 +63,8 @@ def get_match_details(match_id, routing_region, target_puuid, api_key):
                 # --- DYNAMODB KEYS  ---
                 "matchId": match_id,
                 "puuid": target_puuid,
+                # --- GAME DATE FOR EASY FILTERING ---
+                "gameDate": game_date_str,
                 # --- METADATA ---
                 "metadata": {
                     "gameMode": info.get("gameMode", "UNKNOWN"),
