@@ -16,10 +16,16 @@ def load_config():
 def get_puuid(name, tag, region):
     url = f"https://{region}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{name}/{tag}"
     headers = {"X-Riot-Token": API_KEY}
+    print(f"DEBUG: Requesting PUUID for {name}#{tag} from {url}")
     response = requests.get(url, headers=headers)
 
     if response.status_code == 200:
-        return response.json().get("puuid")
+        puuid = response.json().get("puuid")
+        print(f"DEBUG: Found PUUID: {puuid}")
+        return puuid
+    print(
+        f"DEBUG: Failed to get PUUID. Status: {response.status_code} Body: {response.text}"
+    )
     return None
 
 
@@ -35,6 +41,8 @@ def main():
         puuid = get_puuid(name, tag, region)
         if puuid:
             puuid_results[f"{name}#{tag}"] = puuid
+        else:
+            print(f"DEBUG: Skipping {name}#{tag} due to missing PUUID.")
 
     with open("friends_puuids.json", "w") as f:
         json.dump(puuid_results, f, indent=4)
