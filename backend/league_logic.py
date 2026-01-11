@@ -64,6 +64,7 @@ def get_match_details(match_id, routing_region, target_puuid, api_key):
                     "gameEndedInSurrender": p.get("gameEndedInSurrender", False),
                     "teamPosition": p.get("teamPosition", "UNKNOWN"),
                     "championName": p.get("championName", "Unknown"),
+                    "gameEndTimeStamp": info.get("gameEndTimestamp", 0),
                 },
                 # --- COMBAT STATS ---
                 "combat": {
