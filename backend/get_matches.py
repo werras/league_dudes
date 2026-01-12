@@ -11,13 +11,17 @@ table = dynamodb.Table(table_name)
 
 
 def lambda_handler(event, context):
+    print("DEBUG: Starting get_matches lambda_handler")
     try:
         # filter on min date (default to Jan 1, 2026)
-        min_date = os.environ.get("MIN_DATE", "2026-01-01")
+        min_date = os.environ.get("MIN_GAME_DATE", "2026-01-01")
+        print(f"DEBUG: Using MIN_GAME_DATE: {min_date}")
 
         # This simple version scans the whole table (ok for small datasets).
-        response = table.scan(FilterExpression=Attr("gameDate").gtet(min_date))
+        print(f"DEBUG: Scanning table: {table_name}")
+        response = table.scan(FilterExpression=Attr("gameDate").gte(min_date))
         items = response.get("Items", [])
+        print(f"DEBUG: Scan complete. Found {len(items)} items.")
 
         # Sort items by match creation time if available, or handle in frontend
         items.sort(key=lambda x: x.get("gameEndTimestamp", 0), reverse=True)

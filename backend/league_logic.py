@@ -73,6 +73,7 @@ def get_match_details(match_id, routing_region, target_puuid, api_key):
                     "teamPosition": p.get("teamPosition", "UNKNOWN"),
                     "championName": p.get("championName", "Unknown"),
                     "gameEndTimeStamp": info.get("gameEndTimestamp", 0),
+                    "win": p.get("win", False),
                 },
                 # --- COMBAT STATS ---
                 "combat": {
@@ -143,6 +144,9 @@ def process_matches(friends_list, config, api_key, table_resource):
     routing_region = config["settings"].get("region", "americas")
     match_limit = config["settings"].get("match_count", 5)
     processed = 0
+    print(
+        f"DEBUG: Starting process_matches with Region: {routing_region}, Match Limit: {match_limit}"
+    )
 
     for name_tag, puuid in friends_list.items():
         print(f"Checking {name_tag}...")
@@ -164,5 +168,8 @@ def process_matches(friends_list, config, api_key, table_resource):
                     processed += 1
                 except Exception as e:
                     print(f"  > Error saving {mid}: {e}")
+            else:
+                print(f"DEBUG: Skipping match {mid} for {name_tag} (No stats returned)")
 
+    print(f"DEBUG: process_matches complete. Total processed: {processed}")
     return processed

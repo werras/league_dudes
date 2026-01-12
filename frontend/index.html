@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>League Dudes // Live Dashboard</title>
+    <style>
+        :root {
+            --hextech-black: #010a13;
+            --hextech-blue: #0ac8b9;
+            --hextech-gold: #c8aa6e;
+            --hextech-dark-blue: #091428;
+            --card-bg: #1e2328;
+            --text-main: #f0f6f0;
+            --text-dim: #a09b8c;
+            --win-green: #2deb90;
+            --loss-red: #ff4e50;
+        }
+
+        body {
+            background-color: var(--hextech-black);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 40px;
+            overflow-x: hidden;
+        }
+
+        /* --- Header & Summary --- */
+        header {
+            margin-bottom: 40px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 20px;
+        }
+
+        h1 {
+            color: var(--hextech-gold);
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            margin: 0 0 20px 0;
+            font-size: 2.5em;
+        }
+
+        .summary-bar {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .stat-box {
+            background: linear-gradient(180deg, rgba(10,200,185,0.1) 0%, rgba(1,10,19,0) 100%);
+            border: 1px solid var(--hextech-blue);
+            padding: 15px 25px;
+            border-radius: 4px;
+            min-width: 150px;
+        }
+
+        .stat-label {
+            color: var(--hextech-blue);
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: var(--text-main);
+        }
+
+        /* --- Layout: Leaderboard + Grid --- */
+        .main-layout {
+            display: grid;
+            grid-template-columns: 250px 1fr; /* Sidebar | Main Content */
+            gap: 30px;
+        }
+
+        /* --- Sidebar (Leaderboard) --- */
+        .leaderboard {
+            background-color: var(--card-bg);
+            border: 1px solid var(--hextech-gold);
+            border-radius: 4px;
+            padding: 20px;
+            height: fit-content;
+        }
+
+        .lb-title {
+            color: var(--hextech-gold);
+            font-weight: bold;
+            border-bottom: 1px solid #463714;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
+
+        .lb-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            font-size: 0.9em;
+        }
+
+        .lb-rank { color: var(--text-dim); margin-right: 10px; }
+        .lb-name { color: var(--text-main); font-weight: 600; }
+        .lb-score { color: var(--hextech-blue); font-weight: bold; }
+
+        /* --- Match Grid --- */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid #463714;
+            border-radius: 4px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            transition: transform 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Win/Loss Indicator Strip on Left */
+        .card.win { border-left: 4px solid var(--win-green); }
+        .card.loss { border-left: 4px solid var(--loss-red); }
+
+        .card:hover { transform: translateY(-3px); }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 0.75em;
+            color: var(--text-dim);
+            text-transform: uppercase;
+        }
+
+        .champion-name {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: var(--text-main);
+        }
+
+        .kda-block {
+            margin-top: 10px;
+            font-size: 1.1em;
+            color: var(--text-main);
+        }
+        
+        .kda-detail {
+            font-size: 0.8em;
+            color: var(--text-dim);
+        }
+
+        .kda-label {
+            font-size: 0.7em;
+            color: var(--hextech-gold);
+            font-weight: bold;
+        }
+
+        .status-msg {
+            text-align: center;
+            grid-column: 1 / -1;
+            padding: 40px;
+            color: var(--text-dim);
+            border: 2px dashed #333;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>League Dudes // Tracker</h1>
+    
+    <div class="summary-bar" id="summary-section">
+        <div class="stat-box">
+            <div class="stat-label">Matches</div>
+            <div class="stat-value" id="total-matches">0</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-label">Win Rate</div>
+            <div class="stat-value" id="win-rate">0%</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-label">Time Wasted</div>
+            <div class="stat-value" id="total-time">0h 0m</div>
+        </div>
+    </div>
+</header>
+
+<div class="main-layout">
+    
+    <aside class="leaderboard">
+        <div class="lb-title">Top Fraggers (Kills)</div>
+        <div id="leaderboard-list">
+            <div class="lb-row"><span class="lb-rank">-</span> Waiting for data...</div>
+        </div>
+    </aside>
+
+    <main id="match-container" class="dashboard-grid">
+        <div class="status-msg">Loading Matches...</div>
+    </main>
+</div>
+
+<script>
+    // ================================================================
+    // CONFIGURATION
+    // ================================================================
+    const API_URL = "YOUR_API_GATEWAY_URL_HERE"; 
+    const REFRESH_RATE = 600000; // 10 mins
+    // ================================================================
+
+    async function fetchMatches() {
+        try {
+            const response = await fetch(API_URL);
+            if (!response.ok) throw new Error("API Network Error");
+            const matches = await response.json();
+            
+            updateSummary(matches);
+            updateLeaderboard(matches);
+            renderGrid(matches);
+
+        } catch (error) {
+            console.error("Fetch Error:", error);
+        }
+    }
+
+    function updateSummary(matches) {
+        // Logic: Deduplicate matches by ID to calculate total "Group" stats
+        const uniqueMatchIds = new Set();
+        let totalWins = 0;
+        let totalSeconds = 0;
+        let uniqueGameCount = 0;
+
+        matches.forEach(m => {
+            // SAFE NAVIGATION: Access the nested objects
+            const meta = m.metadata || {};
+            const combat = m.combat || {};
+            
+            if (!uniqueMatchIds.has(m.matchId)) {
+                uniqueMatchIds.add(m.matchId);
+                uniqueGameCount++;
+                
+                // New Path: Time Played is in Metadata
+                totalSeconds += (meta.timePlayed || 0);
+
+                // New Path: Win is in Metadata (Make sure you added it back!)
+                if (meta.win) {
+                    totalWins++;
+                }
+            }
+        });
+
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+
+        document.getElementById('total-matches').innerText = uniqueGameCount;
+        document.getElementById('total-time').innerText = `${hours}h ${minutes}m`;
+        
+        const winPct = uniqueGameCount > 0 ? ((totalWins / uniqueGameCount) * 100).toFixed(1) : 0;
+        document.getElementById('win-rate').innerText = `${winPct}%`;
+    }
+
+    function updateLeaderboard(matches) {
+        // Sort by Combat -> Kills
+        const sortedByKills = [...matches].sort((a, b) => {
+            const killsA = (a.combat && a.combat.kills) || 0;
+            const killsB = (b.combat && b.combat.kills) || 0;
+            return killsB - killsA;
+        });
+
+        const top5 = sortedByKills.slice(0, 5);
+        const lbContainer = document.getElementById('leaderboard-list');
+        lbContainer.innerHTML = '';
+
+        top5.forEach((m, index) => {
+            const meta = m.metadata || {};
+            const combat = m.combat || {};
+            
+            const kills = combat.kills || 0;
+            const champ = meta.championName || "Unknown";
+
+            lbContainer.innerHTML += `
+                <div class="lb-row">
+                    <div>
+                        <span class="lb-rank">#${index + 1}</span>
+                        <span class="lb-name">${champ}</span>
+                    </div>
+                    <span class="lb-score">${kills} Kills</span>
+                </div>
+            `;
+        });
+    }
+
+    function renderGrid(matches) {
+        const container = document.getElementById('match-container');
+        container.innerHTML = ''; 
+
+        if (matches.length === 0) {
+            container.innerHTML = `<div class="status-msg">No matches found.</div>`;
+            return;
+        }
+
+        matches.forEach(match => {
+            // --- EXTRACT DATA FROM NEW STRUCTURE ---
+            const meta = match.metadata || {};
+            const combat = match.combat || {};
+            
+            const dateStr = match.gameDate || "Unknown";
+            const champion = meta.championName || "Unknown";
+            const mode = meta.gameMode || "Ranked";
+            const isWin = meta.win; 
+
+            // Combat Stats
+            const kills = combat.kills || 0;
+            const deaths = combat.deaths || 0;
+            const assists = combat.assists || 0;
+            const kdaRatio = combat.kda || 0.0;
+
+            const card = document.createElement('div');
+            const resultClass = isWin === true ? 'win' : (isWin === false ? 'loss' : '');
+            card.className = `card ${resultClass}`;
+
+            card.innerHTML = `
+                <div class="card-header">
+                    <span>${dateStr}</span>
+                    <span>${mode}</span>
+                </div>
+                
+                <div class="champion-name">${champion}</div>
+                
+                <div class="kda-block">
+                    ${kills} / ${deaths} / ${assists}
+                    <div class="kda-detail">
+                        ${kdaRatio} <span class="kda-label">KDA</span>
+                    </div>
+                </div>
+            `;
+
+            container.appendChild(card);
+        });
+    }
+
+    fetchMatches();
+    setInterval(fetchMatches, REFRESH_RATE);
+</script>
+
+</body>
+</html>

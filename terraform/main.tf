@@ -261,6 +261,73 @@ resource "aws_lambda_permission" "league_dudes_api_gw_permission" {
 
 
 # ==============================================================================
+# Frontend Hosting (S3)
+# ==============================================================================
+
+# 1. Create a Random Suffix (Ensures your bucket name is unique globally)
+resource "random_id" "bucket_suffix" {
+  byte_length = 4
+}
+
+# 2. The Bucket
+resource "aws_s3_bucket" "frontend_bucket" {
+  bucket = "league-dudes-dashboard-${random_id.bucket_suffix.hex}"
+  
+  tags = local.common_tags
+}
+
+# 3. Disable "Block Public Access" (Required for public websites)
+resource "aws_s3_bucket_public_access_block" "public_access" {
+  bucket = aws_s3_bucket.frontend_bucket.id
+
+  block_public_acls       = false
+  block_public_policy     = false
+  ignore_public_acls      = false
+  restrict_public_buckets = false
+}
+
+# 4. Website Configuration (Tells S3 to treat this as a website)
+resource "aws_s3_bucket_website_configuration" "website_config" {
+  bucket = aws_s3_bucket.frontend_bucket.id
+
+  index_document {
+    suffix = "index.html"
+  }
+}
+
+# 5. Bucket Policy (Allows the public internet to Read the files)
+resource "aws_s3_bucket_policy" "allow_public_read" {
+  bucket = aws_s3_bucket.frontend_bucket.id
+  
+  # Wait for the block settings to be disabled before applying this policy
+  depends_on = [aws_s3_bucket_public_access_block.public_access]
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid       = "PublicReadGetObject"
+        Effect    = "Allow"
+        Principal = "*"
+        Action    = "s3:GetObject"
+        Resource  = "${aws_s3_bucket.frontend_bucket.arn}/*"
+      }
+    ]
+  })
+}
+
+# 6. Upload the HTML File automatically
+resource "aws_s3_object" "index_html" {
+  bucket       = aws_s3_bucket.frontend_bucket.id
+  key          = "index.html"
+  source       = "${path.module}/../frontend/index.html" 
+  content_type = "text/html"
+  
+  # This hash triggers an upload only when you change the file content
+  etag         = filemd5("${path.module}/../frontend/index.html")
+}
+
+# ==============================================================================
 # Outputs
 # ==============================================================================
 output "dynamodb_table_arn" {
@@ -271,4 +338,9 @@ output "api_endpoint" {
   description = "The public URL for your API"
   # Updated reference
   value       = "${aws_apigatewayv2_api.league_dudes_api.api_endpoint}/matches"
+}
+
+output "dashboard_url" {
+  description = "The URL for your TV Dashboard"
+  value       = aws_s3_bucket_website_configuration.website_config.website_endpoint
 }
