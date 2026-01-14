@@ -212,7 +212,7 @@ resource "aws_apigatewayv2_api" "league_dudes_api" {
   
   cors_configuration {
     allow_origins = ["*"] 
-    allow_methods = ["GET", "OPTIONS"]
+    allow_methods = ["GET", "OPTIONS",]
     allow_headers = ["Content-Type"]
   }
 

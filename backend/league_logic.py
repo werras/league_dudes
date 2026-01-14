@@ -29,7 +29,7 @@ def get_match_ids(puuid, routing_region, count, api_key):
         return []
 
 
-def get_match_details(match_id, routing_region, target_puuid, api_key):
+def get_match_details(match_id, routing_region, target_puuid, api_key, friend_name):
     """
     Fetches the deep details of a match and extracts the stats for ONE player.
     """
@@ -63,6 +63,7 @@ def get_match_details(match_id, routing_region, target_puuid, api_key):
                 # --- DYNAMODB KEYS  ---
                 "matchId": match_id,
                 "puuid": target_puuid,
+                "friendName": friend_name,
                 # --- GAME DATE FOR EASY FILTERING ---
                 "gameDate": game_date_str,
                 # --- METADATA ---
@@ -155,7 +156,7 @@ def process_matches(friends_list, config, api_key, table_resource):
 
         for mid in ids:
             # 1. Fetch the Rich Data
-            stats = get_match_details(mid, routing_region, puuid, api_key)
+            stats = get_match_details(mid, routing_region, puuid, api_key, name_tag)
 
             if stats:
                 # 2. Prepare for DynamoDB (Convert Floats to Decimals)

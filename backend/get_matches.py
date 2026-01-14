@@ -28,11 +28,6 @@ def lambda_handler(event, context):
 
         return {
             "statusCode": 200,
-            "headers": {
-                "Content-Type": "application/json",
-                # Enable CORS so your future website can talk to this API
-                "Access-Control-Allow-Origin": "*",
-            },
             "body": json.dumps(items, default=str),  # default=str handles Decimal types
         }
 

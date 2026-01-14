@@ -15,6 +15,7 @@
             --text-dim: #a09b8c;
             --win-green: #2deb90;
             --loss-red: #ff4e50;
+            --bar-bg: #091428;
         }
 
         body {
@@ -69,50 +70,83 @@
             color: var(--text-main);
         }
 
-        /* --- Layout: Leaderboard + Grid --- */
+        /* --- Layout: Sidebar + Grid --- */
         .main-layout {
             display: grid;
-            grid-template-columns: 250px 1fr; /* Sidebar | Main Content */
+            grid-template-columns: 300px 1fr; /* Sidebar wider to fit charts */
             gap: 30px;
         }
 
-        /* --- Sidebar (Leaderboard) --- */
-        .leaderboard {
+        /* --- Sidebar Widgets --- */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .widget {
             background-color: var(--card-bg);
             border: 1px solid var(--hextech-gold);
             border-radius: 4px;
             padding: 20px;
-            height: fit-content;
         }
 
-        .lb-title {
+        .widget-title {
             color: var(--hextech-gold);
             font-weight: bold;
             border-bottom: 1px solid #463714;
             padding-bottom: 10px;
             margin-bottom: 15px;
             text-transform: uppercase;
+            font-size: 0.9em;
+            letter-spacing: 1px;
         }
 
         .lb-row {
             display: flex;
             justify-content: space-between;
+            align-items: center;
             margin-bottom: 12px;
             font-size: 0.9em;
         }
 
-        .lb-rank { color: var(--text-dim); margin-right: 10px; }
-        .lb-name { color: var(--text-main); font-weight: 600; }
+        .lb-rank { color: var(--text-dim); margin-right: 10px; width: 15px; }
+        .lb-name { color: var(--text-main); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; }
         .lb-score { color: var(--hextech-blue); font-weight: bold; }
+        .lb-score-dead { color: #888; font-weight: bold; }
+
+        /* --- Damage Bar Chart Styles --- */
+        .damage-row {
+            margin-bottom: 15px;
+        }
+        .damage-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85em;
+            margin-bottom: 4px;
+        }
+        .bar-container {
+            width: 100%;
+            height: 6px;
+            background-color: var(--bar-bg);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .bar-fill {
+            height: 100%;
+            background-color: #ff4e50; /* Red for damage */
+            width: 0%; 
+            transition: width 1s ease-out;
+        }
 
         /* --- Match Grid --- */
         .dashboard-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            display: flex;
+            flex-direction: column;
             gap: 20px;
         }
 
-        .card {
+        .match-row {
             background-color: var(--card-bg);
             border: 1px solid #463714;
             border-radius: 4px;
@@ -121,33 +155,56 @@
             flex-direction: column;
             box-shadow: 0 4px 10px rgba(0,0,0,0.5);
             transition: transform 0.2s;
-            position: relative;
-            overflow: hidden;
         }
 
-        /* Win/Loss Indicator Strip on Left */
-        .card.win { border-left: 4px solid var(--win-green); }
-        .card.loss { border-left: 4px solid var(--loss-red); }
+        .match-row.win { border-left: 4px solid var(--win-green); }
+        .match-row.loss { border-left: 4px solid var(--loss-red); }
+        .match-row:hover { transform: translateY(-3px); }
 
-        .card:hover { transform: translateY(-3px); }
-
-        .card-header {
+        .match-header {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 10px;
-            font-size: 0.75em;
+            margin-bottom: 15px;
+            font-size: 0.85em;
             color: var(--text-dim);
             text-transform: uppercase;
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
         }
 
-        .champion-name {
+        .match-players {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .player-card {
+            background-color: rgba(0,0,0,0.2);
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-width: 180px;
+        }
+
+        .friend-name {
             font-size: 1.4em;
             font-weight: bold;
-            color: var(--text-main);
+            color: var(--hextech-blue);
+            margin-bottom: 2px;
+        }
+
+        .champion-subtext {
+            font-size: 0.9em;
+            color: var(--text-dim);
+            font-style: italic;
+            margin-bottom: 15px;
         }
 
         .kda-block {
-            margin-top: 10px;
+            margin-top: auto; /* Push to bottom */
             font-size: 1.1em;
             color: var(--text-main);
         }
@@ -170,24 +227,87 @@
             color: var(--text-dim);
             border: 2px dashed #333;
         }
+
+        /* --- Champion Mastery Grid --- */
+        .mastery-section {
+            grid-column: 1 / -1; /* Span full width */
+            background-color: var(--card-bg);
+            border: 1px solid var(--hextech-gold);
+            padding: 20px;
+            margin-top: 30px;
+            border-radius: 4px;
+        }
+
+        .mastery-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            margin-top: 15px;
+        }
+
+        .champ-portrait {
+            width: 40px;
+            height: 40px;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            border: 1px solid #333;
+        }
+
+        /* The Magic: Default is Grey and Faded */
+        .champ-portrait.locked {
+            filter: grayscale(100%) brightness(0.5);
+            opacity: 0.6;
+        }
+
+        /* If played: Full Color and Glowing */
+        .champ-portrait.unlocked {
+            filter: grayscale(0%);
+            opacity: 1;
+            border: 1px solid var(--hextech-blue);
+            box-shadow: 0 0 8px var(--hextech-blue);
+            transform: scale(1.1); /* Pop out slightly */
+            z-index: 10;
+        }
+        
+        .mastery-header {
+            display: flex;
+            justify-content: space-between;
+            color: var(--hextech-gold);
+            text-transform: uppercase;
+            font-weight: bold;
+            border-bottom: 1px solid #463714;
+            padding-bottom: 10px;
+        }
     </style>
 </head>
 <body>
 
 <header>
-    <h1>League Dudes // Tracker</h1>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h1>League Dudes // Tracker</h1>
+        <div id="since-clock" style="font-size: 1.2em; color: var(--hextech-gold); font-weight: bold; font-family: monospace;">--:--:--</div>
+    </div>
     
     <div class="summary-bar" id="summary-section">
         <div class="stat-box">
-            <div class="stat-label">Matches</div>
-            <div class="stat-value" id="total-matches">0</div>
+            <div class="stat-label">Regs Matches</div>
+            <div class="stat-value" id="regs-matches">0</div>
         </div>
         <div class="stat-box">
-            <div class="stat-label">Win Rate</div>
-            <div class="stat-value" id="win-rate">0%</div>
+            <div class="stat-label">Regs Win Rate</div>
+            <div class="stat-value" id="regs-win-rate">0%</div>
         </div>
         <div class="stat-box">
-            <div class="stat-label">Time Wasted</div>
+            <div class="stat-label">ARAM Matches</div>
+            <div class="stat-value" id="aram-matches">0</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-label">ARAM Win Rate</div>
+            <div class="stat-value" id="aram-win-rate">0%</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-label">Time in Game</div>
             <div class="stat-value" id="total-time">0h 0m</div>
         </div>
     </div>
@@ -195,11 +315,32 @@
 
 <div class="main-layout">
     
-    <aside class="leaderboard">
-        <div class="lb-title">Top Fraggers (Kills)</div>
-        <div id="leaderboard-list">
-            <div class="lb-row"><span class="lb-rank">-</span> Waiting for data...</div>
+    <aside class="sidebar">
+        
+        <div class="widget">
+            <div class="widget-title">Kills Leaderboard</div>
+            <div id="leaderboard-kills">
+                <div class="lb-row"><span class="lb-rank">-</span> Waiting for data...</div>
+            </div>
         </div>
+
+        <div class="widget">
+            <div class="widget-title">Top Damage Dealt</div>
+            <div id="leaderboard-damage">
+                </div>
+        </div>
+
+        <div class="widget">
+            <div class="widget-title">Grey Screen Award (Dead)</div>
+            <div id="leaderboard-dead">
+                </div>
+        </div>
+
+        <div class="widget">
+            <div class="widget-title">Most Pings (Single Game)</div>
+            <div id="leaderboard-pings"></div>
+        </div>
+
     </aside>
 
     <main id="match-container" class="dashboard-grid">
@@ -207,13 +348,26 @@
     </main>
 </div>
 
+<div class="mastery-section">
+    <div class="mastery-header">
+        <span>Champion Collection</span>
+        <span id="collection-count">0 / 0 Played</span>
+    </div>
+    <div id="champion-grid" class="mastery-grid">
+        Loading Library...
+    </div>
+</div>
+
 <script>
     // ================================================================
     // CONFIGURATION
     // ================================================================
-    const API_URL = "YOUR_API_GATEWAY_URL_HERE"; 
+    const API_URL = "https://66jjhrtou1.execute-api.us-west-1.amazonaws.com/matches"; 
     const REFRESH_RATE = 600000; // 10 mins
     // ================================================================
+    let latestGameEnd = 0;
+    let allChampionData = {};
+    let latestVersion = "14.1.1"; // Default fallback
 
     async function fetchMatches() {
         try {
@@ -221,8 +375,18 @@
             if (!response.ok) throw new Error("API Network Error");
             const matches = await response.json();
             
+            latestGameEnd = 0;
+            matches.forEach(m => {
+                const ts = Number(m.metadata?.gameEndTimeStamp || 0);
+                if (ts > latestGameEnd) latestGameEnd = ts;
+            });
+
             updateSummary(matches);
-            updateLeaderboard(matches);
+            updateKillsLeaderboard(matches);
+            updateDamageLeaderboard(matches);
+            updateDeadLeaderboard(matches);
+            updatePingsLeaderboard(matches);
+            renderChampionCollection(matches);
             renderGrid(matches);
 
         } catch (error) {
@@ -230,28 +394,49 @@
         }
     }
 
+    // 1. Call this ONCE when the page loads
+    async function initChampionLibrary() {
+        try {
+            // A. Get latest Data Dragon version
+            const versionResp = await fetch("https://ddragon.leagueoflegends.com/api/versions.json");
+            const versions = await versionResp.json();
+            latestVersion = versions[0]; // e.g., "14.1.1"
+
+            // B. Get all champions
+            const champResp = await fetch(`https://ddragon.leagueoflegends.com/cdn/${latestVersion}/data/en_US/champion.json`);
+            const champJson = await champResp.json();
+            allChampionData = champJson.data; // This is a dictionary of "Aatrox": { ... }
+
+            console.log(`Loaded library for Patch ${latestVersion}`);
+        } catch (e) {
+            console.error("Failed to load Data Dragon:", e);
+        }
+    }
+
     function updateSummary(matches) {
-        // Logic: Deduplicate matches by ID to calculate total "Group" stats
         const uniqueMatchIds = new Set();
-        let totalWins = 0;
+        let regsMatches = 0;
+        let regsWins = 0;
+        let aramMatches = 0;
+        let aramWins = 0;
         let totalSeconds = 0;
-        let uniqueGameCount = 0;
 
         matches.forEach(m => {
-            // SAFE NAVIGATION: Access the nested objects
             const meta = m.metadata || {};
-            const combat = m.combat || {};
             
             if (!uniqueMatchIds.has(m.matchId)) {
                 uniqueMatchIds.add(m.matchId);
-                uniqueGameCount++;
-                
-                // New Path: Time Played is in Metadata
-                totalSeconds += (meta.timePlayed || 0);
+                totalSeconds += Number(meta.timePlayed || 0);
 
-                // New Path: Win is in Metadata (Make sure you added it back!)
-                if (meta.win) {
-                    totalWins++;
+                const mode = meta.gameMode;
+                const isWin = meta.win;
+
+                if (mode === 'CLASSIC') {
+                    regsMatches++;
+                    if (isWin) regsWins++;
+                } else if (mode === 'ARAM') {
+                    aramMatches++;
+                    if (isWin) aramWins++;
                 }
             }
         });
@@ -259,44 +444,153 @@
         const hours = Math.floor(totalSeconds / 3600);
         const minutes = Math.floor((totalSeconds % 3600) / 60);
 
-        document.getElementById('total-matches').innerText = uniqueGameCount;
+        document.getElementById('regs-matches').innerText = regsMatches;
+        const regsWinPct = regsMatches > 0 ? ((regsWins / regsMatches) * 100).toFixed(1) : 0;
+        document.getElementById('regs-win-rate').innerText = `${regsWinPct}%`;
+
+        document.getElementById('aram-matches').innerText = aramMatches;
+        const aramWinPct = aramMatches > 0 ? ((aramWins / aramMatches) * 100).toFixed(1) : 0;
+        document.getElementById('aram-win-rate').innerText = `${aramWinPct}%`;
+
         document.getElementById('total-time').innerText = `${hours}h ${minutes}m`;
-        
-        const winPct = uniqueGameCount > 0 ? ((totalWins / uniqueGameCount) * 100).toFixed(1) : 0;
-        document.getElementById('win-rate').innerText = `${winPct}%`;
     }
 
-    function updateLeaderboard(matches) {
-        // Sort by Combat -> Kills
-        const sortedByKills = [...matches].sort((a, b) => {
-            const killsA = (a.combat && a.combat.kills) || 0;
-            const killsB = (b.combat && b.combat.kills) || 0;
-            return killsB - killsA;
+    // --- LEADERBOARD 1: KILLS ---
+    function updateKillsLeaderboard(matches) {
+        const sorted = [...matches].sort((a, b) => {
+            const vA = (a.combat && a.combat.kills) || 0;
+            const vB = (b.combat && b.combat.kills) || 0;
+            return vB - vA;
         });
 
-        const top5 = sortedByKills.slice(0, 5);
-        const lbContainer = document.getElementById('leaderboard-list');
-        lbContainer.innerHTML = '';
+        const container = document.getElementById('leaderboard-kills');
+        container.innerHTML = '';
 
-        top5.forEach((m, index) => {
-            const meta = m.metadata || {};
-            const combat = m.combat || {};
-            
-            const kills = combat.kills || 0;
-            const champ = meta.championName || "Unknown";
+        sorted.slice(0, 5).forEach((m, index) => {
+            const kills = m.combat?.kills || 0;
+            const name = m.friendName || "Unknown"; // Direct Backend Mapping
 
-            lbContainer.innerHTML += `
+            container.innerHTML += `
                 <div class="lb-row">
                     <div>
                         <span class="lb-rank">#${index + 1}</span>
-                        <span class="lb-name">${champ}</span>
+                        <span class="lb-name">${name}</span>
                     </div>
-                    <span class="lb-score">${kills} Kills</span>
+                    <span class="lb-score">${kills}</span>
                 </div>
             `;
         });
     }
 
+    // --- LEADERBOARD 2: DAMAGE (BAR CHART) ---
+    function updateDamageLeaderboard(matches) {
+        const sorted = [...matches].sort((a, b) => {
+            const vA = (a.combat && a.combat.totalDamageDealtToChampions) || 0;
+            const vB = (b.combat && b.combat.totalDamageDealtToChampions) || 0;
+            return vB - vA;
+        });
+
+        // Get max damage to calculate percentages for bars
+        const maxDmg = (sorted[0]?.combat?.totalDamageDealtToChampions) || 1; 
+
+        const container = document.getElementById('leaderboard-damage');
+        container.innerHTML = '';
+
+        sorted.slice(0, 5).forEach((m, index) => {
+            const dmg = m.combat?.totalDamageDealtToChampions || 0;
+            const name = m.friendName || "Unknown"; // Direct Backend Mapping
+            const pct = (dmg / maxDmg) * 100;
+
+            container.innerHTML += `
+                <div class="damage-row">
+                    <div class="damage-header">
+                        <span class="lb-name">${name}</span>
+                        <span style="color:var(--text-dim);">${(dmg / 1000).toFixed(1)}k</span>
+                    </div>
+                    <div class="bar-container">
+                        <div class="bar-fill" style="width: ${pct}%"></div>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    // --- LEADERBOARD 3: GREY SCREEN (TIME DEAD) ---
+    function updateDeadLeaderboard(matches) {
+        const sorted = [...matches].sort((a, b) => {
+            const vA = (a.combat && a.combat.totalTimeSpentDead) || 0;
+            const vB = (b.combat && b.combat.totalTimeSpentDead) || 0;
+            return vB - vA;
+        });
+
+        const container = document.getElementById('leaderboard-dead');
+        container.innerHTML = '';
+
+        sorted.slice(0, 5).forEach((m, index) => {
+            const secondsDead = m.combat?.totalTimeSpentDead || 0;
+            const name = m.friendName || "Unknown"; // Direct Backend Mapping
+            
+            // Format M:SS
+            const mins = Math.floor(secondsDead / 60);
+            const secs = secondsDead % 60;
+            const timeStr = `${mins}:${secs.toString().padStart(2, '0')}`;
+
+            container.innerHTML += `
+                <div class="lb-row">
+                    <div>
+                        <span class="lb-rank">#${index + 1}</span>
+                        <span class="lb-name">${name}</span>
+                    </div>
+                    <span class="lb-score-dead">${timeStr}</span>
+                </div>
+            `;
+        });
+    }
+
+    // --- LEADERBOARD 4: PINGS ---
+    function updatePingsLeaderboard(matches) {
+        // Helper to sum all ping types
+        const getPingSum = (m) => {
+            const pings = m.vision_and_social?.pings || {};
+            // Sum all values in the pings dictionary (ensure they are treated as numbers)
+            return Object.values(pings).reduce((acc, val) => acc + Number(val), 0);
+        };
+
+        const sorted = [...matches].sort((a, b) => {
+            return getPingSum(b) - getPingSum(a);
+        });
+
+        const container = document.getElementById('leaderboard-pings');
+        container.innerHTML = '';
+
+        sorted.slice(0, 5).forEach((m, index) => {
+            const totalPings = getPingSum(m);
+            const name = m.friendName || "Unknown";
+            
+            // Generate Breakdown for Tooltip
+            const pings = m.vision_and_social?.pings || {};
+            const breakdown = Object.entries(pings)
+                .filter(([_, val]) => Number(val) > 0)
+                .map(([key, val]) => {
+                    // Convert camelCase to Title Case (e.g. enemyMissing -> Enemy Missing)
+                    const label = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+                    return `${label}: ${val}`;
+                })
+                .join('\n');
+
+            container.innerHTML += `
+                <div class="lb-row" title="${breakdown}" style="cursor: help;">
+                    <div>
+                        <span class="lb-rank">#${index + 1}</span>
+                        <span class="lb-name">${name}</span>
+                    </div>
+                    <span class="lb-score">${totalPings}</span>
+                </div>
+            `;
+        });
+    }
+
+    // --- MAIN GRID RENDER ---
     function renderGrid(matches) {
         const container = document.getElementById('match-container');
         container.innerHTML = ''; 
@@ -306,48 +600,142 @@
             return;
         }
 
-        matches.forEach(match => {
-            // --- EXTRACT DATA FROM NEW STRUCTURE ---
-            const meta = match.metadata || {};
-            const combat = match.combat || {};
-            
-            const dateStr = match.gameDate || "Unknown";
-            const champion = meta.championName || "Unknown";
+        // Group by Match ID
+        const groups = new Map();
+        matches.forEach(m => {
+            if (!groups.has(m.matchId)) {
+                groups.set(m.matchId, []);
+            }
+            groups.get(m.matchId).push(m);
+        });
+
+        groups.forEach((groupMatches) => {
+        // Sort groups by gameEndTimeStamp descending (Most Recent First)
+        const sortedGroups = Array.from(groups.values()).sort((a, b) => {
+            const timeA = a[0]?.metadata?.gameEndTimeStamp || 0;
+            const timeB = b[0]?.metadata?.gameEndTimeStamp || 0;
+            return Number(timeB) - Number(timeA);
+        });
+
+        sortedGroups.forEach((groupMatches) => {
+            // Use first player's data for match-level info
+            const first = groupMatches[0];
+            const meta = first.metadata || {};
+            const dateStr = first.gameDate || "Unknown";
             const mode = meta.gameMode || "Ranked";
-            const isWin = meta.win; 
+            const isWin = meta.win;
 
-            // Combat Stats
-            const kills = combat.kills || 0;
-            const deaths = combat.deaths || 0;
-            const assists = combat.assists || 0;
-            const kdaRatio = combat.kda || 0.0;
-
-            const card = document.createElement('div');
+            const row = document.createElement('div');
             const resultClass = isWin === true ? 'win' : (isWin === false ? 'loss' : '');
-            card.className = `card ${resultClass}`;
+            row.className = `match-row ${resultClass}`;
 
-            card.innerHTML = `
-                <div class="card-header">
+            let html = `
+                <div class="match-header">
                     <span>${dateStr}</span>
                     <span>${mode}</span>
                 </div>
-                
-                <div class="champion-name">${champion}</div>
-                
-                <div class="kda-block">
-                    ${kills} / ${deaths} / ${assists}
-                    <div class="kda-detail">
-                        ${kdaRatio} <span class="kda-label">KDA</span>
-                    </div>
-                </div>
+                <div class="match-players">
             `;
 
-            container.appendChild(card);
+            groupMatches.forEach(match => {
+                const mMeta = match.metadata || {};
+                const combat = match.combat || {};
+
+                const rawPos = mMeta.teamPosition || "";
+                const roleMap = {
+                    'UTILITY': 'Support',
+                    'BOTTOM': 'ADC'
+                };
+                const posDisplay = roleMap[rawPos] || (rawPos.charAt(0).toUpperCase() + rawPos.slice(1).toLowerCase());
+                
+                html += `
+                    <div class="player-card">
+                        <div class="friend-name">${match.friendName || "Unknown"}</div>
+                        <div class="champion-subtext">
+                            ${mMeta.championName || "Unknown"}
+                            <div style="font-size: 0.8em; margin-top: 2px; opacity: 0.7;">${posDisplay}</div>
+                        </div>
+                        <div class="kda-block">
+                            ${combat.kills || 0} / ${combat.deaths || 0} / ${combat.assists || 0}
+                            <div class="kda-detail">
+                                ${combat.kda || 0} <span class="kda-label">KDA</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `</div>`; // Close match-players
+            row.innerHTML = html;
+            container.appendChild(row);
         });
     }
 
-    fetchMatches();
+    // --- RUNNING CLOCK ---
+    function updateSinceClock() {
+        const el = document.getElementById('since-clock');
+        if (!latestGameEnd) {
+            el.innerText = "Waiting for data...";
+            return;
+        }
+
+        const diff = Date.now() - latestGameEnd;
+        const totalSeconds = Math.floor(Math.max(0, diff) / 1000);
+        
+        const h = Math.floor(totalSeconds / 3600);
+        const m = Math.floor((totalSeconds % 3600) / 60);
+        const s = totalSeconds % 60;
+
+        el.innerText = `${h}h ${m}m ${s}s since last game`;
+    },
+
+    function renderChampionCollection(matches) {
+        if (Object.keys(allChampionData).length === 0) return; // Library not loaded yet
+
+        const grid = document.getElementById('champion-grid');
+        grid.innerHTML = '';
+
+        // 1. Find out which champs have been played
+        const playedSet = new Set();
+        matches.forEach(m => {
+            const name = m.metadata?.championName;
+            if (name) playedSet.add(name);
+        });
+
+        // 2. Sort champions alphabetically
+        const sortedChamps = Object.values(allChampionData).sort((a, b) => a.name.localeCompare(b.name));
+        
+        let unlockedCount = 0;
+
+        // 3. Render
+        sortedChamps.forEach(champ => {
+            // Check if played (using Riot's ID)
+            const isPlayed = playedSet.has(champ.id); 
+            
+            if (isPlayed) unlockedCount++;
+
+            const img = document.createElement('img');
+            img.src = `https://ddragon.leagueoflegends.com/cdn/${latestVersion}/img/champion/${champ.image.full}`;
+            
+            // Apply the CSS classes
+            img.className = `champ-portrait ${isPlayed ? 'unlocked' : 'locked'}`;
+            img.title = champ.name;
+            
+            grid.appendChild(img);
+        });
+
+        document.getElementById('collection-count').innerText = 
+            `${unlockedCount} / ${sortedChamps.length} Played`;
+    }
+
+    // Run
+    // 1. Initialize the Riot Library FIRST
+    initChampionLibrary().then(() => {
+        // 2. Once that is ready, fetch  match data
+        fetchMatches();
+    });
     setInterval(fetchMatches, REFRESH_RATE);
+    setInterval(updateSinceClock, 1000);
 </script>
 
 </body>
