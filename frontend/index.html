@@ -310,6 +310,10 @@
             <div class="stat-label">Time in Game</div>
             <div class="stat-value" id="total-time">0h 0m</div>
         </div>
+        <div class="stat-box">
+            <div class="stat-label">Longest Game</div>
+            <div class="stat-value" id="longest-game">0m 00s</div>
+        </div>
     </div>
 </header>
 
@@ -337,7 +341,7 @@
         </div>
 
         <div class="widget">
-            <div class="widget-title">Most Pings (Single Game)</div>
+            <div class="widget-title">Most Pings (All Games)</div>
             <div id="leaderboard-pings"></div>
         </div>
 
@@ -420,13 +424,16 @@
         let aramMatches = 0;
         let aramWins = 0;
         let totalSeconds = 0;
+        let maxDuration = 0;
 
         matches.forEach(m => {
             const meta = m.metadata || {};
             
             if (!uniqueMatchIds.has(m.matchId)) {
                 uniqueMatchIds.add(m.matchId);
-                totalSeconds += Number(meta.timePlayed || 0);
+                const duration = Number(meta.timePlayed || 0);
+                totalSeconds += duration;
+                if (duration > maxDuration) maxDuration = duration;
 
                 const mode = meta.gameMode;
                 const isWin = meta.win;
@@ -453,6 +460,10 @@
         document.getElementById('aram-win-rate').innerText = `${aramWinPct}%`;
 
         document.getElementById('total-time').innerText = `${hours}h ${minutes}m`;
+
+        const lgMins = Math.floor(maxDuration / 60);
+        const lgSecs = maxDuration % 60;
+        document.getElementById('longest-game').innerText = `${lgMins}m ${lgSecs.toString().padStart(2, '0')}s`;
     }
 
     // --- LEADERBOARD 1: KILLS ---
@@ -549,28 +560,37 @@
 
     // --- LEADERBOARD 4: PINGS ---
     function updatePingsLeaderboard(matches) {
-        // Helper to sum all ping types
-        const getPingSum = (m) => {
-            const pings = m.vision_and_social?.pings || {};
-            // Sum all values in the pings dictionary (ensure they are treated as numbers)
-            return Object.values(pings).reduce((acc, val) => acc + Number(val), 0);
-        };
+        // Aggregate pings by friendName
+        const pingStats = {};
 
-        const sorted = [...matches].sort((a, b) => {
-            return getPingSum(b) - getPingSum(a);
+        matches.forEach(m => {
+            const name = m.friendName || "Unknown";
+            if (!pingStats[name]) {
+                pingStats[name] = { total: 0, types: {} };
+            }
+            
+            const pings = m.vision_and_social?.pings || {};
+            Object.entries(pings).forEach(([key, val]) => {
+                const count = Number(val);
+                if (count > 0) {
+                    pingStats[name].total += count;
+                    pingStats[name].types[key] = (pingStats[name].types[key] || 0) + count;
+                }
+            });
         });
+
+        // Convert to array and sort
+        const sorted = Object.entries(pingStats)
+            .map(([name, data]) => ({ name, ...data }))
+            .sort((a, b) => b.total - a.total);
 
         const container = document.getElementById('leaderboard-pings');
         container.innerHTML = '';
 
-        sorted.slice(0, 5).forEach((m, index) => {
-            const totalPings = getPingSum(m);
-            const name = m.friendName || "Unknown";
-            
+        sorted.slice(0, 5).forEach((p, index) => {
             // Generate Breakdown for Tooltip
-            const pings = m.vision_and_social?.pings || {};
-            const breakdown = Object.entries(pings)
-                .filter(([_, val]) => Number(val) > 0)
+            const breakdown = Object.entries(p.types)
+                .sort((a, b) => b[1] - a[1]) // Sort breakdown by count descending
                 .map(([key, val]) => {
                     // Convert camelCase to Title Case (e.g. enemyMissing -> Enemy Missing)
                     const label = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
@@ -582,9 +602,9 @@
                 <div class="lb-row" title="${breakdown}" style="cursor: help;">
                     <div>
                         <span class="lb-rank">#${index + 1}</span>
-                        <span class="lb-name">${name}</span>
+                        <span class="lb-name">${p.name}</span>
                     </div>
-                    <span class="lb-score">${totalPings}</span>
+                    <span class="lb-score" style="text-align: right;">${p.total}</span>
                 </div>
             `;
         });
@@ -609,7 +629,6 @@
             groups.get(m.matchId).push(m);
         });
 
-        groups.forEach((groupMatches) => {
         // Sort groups by gameEndTimeStamp descending (Most Recent First)
         const sortedGroups = Array.from(groups.values()).sort((a, b) => {
             const timeA = a[0]?.metadata?.gameEndTimeStamp || 0;
@@ -625,6 +644,11 @@
             const mode = meta.gameMode || "Ranked";
             const isWin = meta.win;
 
+            const duration = Number(meta.timePlayed || 0);
+            const mins = Math.floor(duration / 60);
+            const secs = duration % 60;
+            const durationStr = `${mins}m ${secs.toString().padStart(2, '0')}s`;
+
             const row = document.createElement('div');
             const resultClass = isWin === true ? 'win' : (isWin === false ? 'loss' : '');
             row.className = `match-row ${resultClass}`;
@@ -633,6 +657,7 @@
                 <div class="match-header">
                     <span>${dateStr}</span>
                     <span>${mode}</span>
+                    <span>${durationStr}</span>
                 </div>
                 <div class="match-players">
             `;
@@ -687,7 +712,7 @@
         const s = totalSeconds % 60;
 
         el.innerText = `${h}h ${m}m ${s}s since last game`;
-    },
+    }
 
     function renderChampionCollection(matches) {
         if (Object.keys(allChampionData).length === 0) return; // Library not loaded yet

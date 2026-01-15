@@ -86,6 +86,7 @@ def get_match_details(match_id, routing_region, target_puuid, api_key, friend_na
                         / max(1, p.get("deaths", 1)),
                         2,
                     ),
+                    "goldEarned": p.get("goldEarned", 0),
                     "firstBloodKill": p.get("firstBloodKill", False),
                     "largestCriticalStrike": p.get("largestCriticalStrike", 0),
                     "totalDamageDealtToChampions": p.get(
