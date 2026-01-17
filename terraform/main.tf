@@ -165,7 +165,7 @@ resource "aws_lambda_function" "league_dudes_reader" {
   environment {
     variables = {
       TABLE_NAME = aws_dynamodb_table.league_matches.name
-      MIN_GAME_DATE = "2026-01-01" # can change here or in AWS console
+      MIN_GAME_DATE = "2026-01-16" # can change here or in AWS console
     }
   }
 

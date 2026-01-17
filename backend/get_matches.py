@@ -23,7 +23,7 @@ def lambda_handler(event, context):
         items = response.get("Items", [])
         print(f"DEBUG: Scan complete. Found {len(items)} items.")
 
-        # Sort items by match creation time if available, or handle in frontend
+        # Sort items by match end time if available, or handle in frontend
         items.sort(key=lambda x: x.get("gameEndTimestamp", 0), reverse=True)
 
         return {

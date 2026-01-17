@@ -382,6 +382,11 @@
         </div>
 
         <div class="widget">
+            <div class="widget-title">Vision Score Leaderboard</div>
+            <div id="leaderboard-vision"></div>
+        </div>
+
+        <div class="widget">
             <div class="widget-title">Most Pings (All Games)</div>
             <div id="leaderboard-pings"></div>
         </div>
@@ -421,6 +426,7 @@
             updateKillsLeaderboard(matches);
             updateDamageLeaderboard(matches);
             updateDeadLeaderboard(matches);
+            updateVisionLeaderboard(matches);
             updatePingsLeaderboard(matches);
             renderChampionCollection(matches);
             renderCharts(matches);
@@ -501,26 +507,28 @@
 
     // --- LEADERBOARD 1: KILLS ---
     function updateKillsLeaderboard(matches) {
-        const sorted = [...matches].sort((a, b) => {
-            const vA = (a.combat && a.combat.kills) || 0;
-            const vB = (b.combat && b.combat.kills) || 0;
-            return vB - vA;
+        const stats = {};
+        matches.forEach(m => {
+            const name = m.friendName || "Unknown";
+            const kills = Number(m.combat && m.combat.kills) || 0;
+            stats[name] = (stats[name] || 0) + kills;
         });
+
+        const sorted = Object.entries(stats)
+            .map(([name, kills]) => ({ name, kills }))
+            .sort((a, b) => b.kills - a.kills);
 
         const container = document.getElementById('leaderboard-kills');
         container.innerHTML = '';
 
-        sorted.slice(0, 5).forEach((m, index) => {
-            const kills = m.combat?.kills || 0;
-            const name = m.friendName || "Unknown"; // Direct Backend Mapping
-
+        sorted.slice(0, 5).forEach((p, index) => {
             container.innerHTML += `
                 <div class="lb-row">
                     <div>
                         <span class="lb-rank">#${index + 1}</span>
-                        <span class="lb-name">${name}</span>
+                        <span class="lb-name">${p.name}</span>
                     </div>
-                    <span class="lb-score">${kills}</span>
+                    <span class="lb-score">${p.kills}</span>
                 </div>
             `;
         });
@@ -528,28 +536,31 @@
 
     // --- LEADERBOARD 2: DAMAGE (BAR CHART) ---
     function updateDamageLeaderboard(matches) {
-        const sorted = [...matches].sort((a, b) => {
-            const vA = (a.combat && a.combat.totalDamageDealtToChampions) || 0;
-            const vB = (b.combat && b.combat.totalDamageDealtToChampions) || 0;
-            return vB - vA;
+        const stats = {};
+        matches.forEach(m => {
+            const name = m.friendName || "Unknown";
+            const dmg = Number(m.combat && m.combat.totalDamageDealtToChampions) || 0;
+            stats[name] = (stats[name] || 0) + dmg;
         });
 
+        const sorted = Object.entries(stats)
+            .map(([name, dmg]) => ({ name, dmg }))
+            .sort((a, b) => b.dmg - a.dmg);
+
         // Get max damage to calculate percentages for bars
-        const maxDmg = (sorted[0]?.combat?.totalDamageDealtToChampions) || 1; 
+        const maxDmg = (sorted[0]?.dmg) || 1; 
 
         const container = document.getElementById('leaderboard-damage');
         container.innerHTML = '';
 
-        sorted.slice(0, 5).forEach((m, index) => {
-            const dmg = m.combat?.totalDamageDealtToChampions || 0;
-            const name = m.friendName || "Unknown"; // Direct Backend Mapping
-            const pct = (dmg / maxDmg) * 100;
+        sorted.slice(0, 5).forEach((p, index) => {
+            const pct = (p.dmg / maxDmg) * 100;
 
             container.innerHTML += `
                 <div class="damage-row">
                     <div class="damage-header">
-                        <span class="lb-name">${name}</span>
-                        <span style="color:var(--text-dim);">${(dmg / 1000).toFixed(1)}k</span>
+                        <span class="lb-name">${p.name}</span>
+                        <span style="color:var(--text-dim);">${(p.dmg / 1000).toFixed(1)}k</span>
                     </div>
                     <div class="bar-container">
                         <div class="bar-fill" style="width: ${pct}%"></div>
@@ -561,31 +572,62 @@
 
     // --- LEADERBOARD 3: GREY SCREEN (TIME DEAD) ---
     function updateDeadLeaderboard(matches) {
-        const sorted = [...matches].sort((a, b) => {
-            const vA = (a.combat && a.combat.totalTimeSpentDead) || 0;
-            const vB = (b.combat && b.combat.totalTimeSpentDead) || 0;
-            return vB - vA;
+        const stats = {};
+        matches.forEach(m => {
+            const name = m.friendName || "Unknown";
+            const timeDead = Number(m.combat && m.combat.totalTimeSpentDead) || 0;
+            stats[name] = (stats[name] || 0) + timeDead;
         });
+
+        const sorted = Object.entries(stats)
+            .map(([name, timeDead]) => ({ name, timeDead }))
+            .sort((a, b) => b.timeDead - a.timeDead);
 
         const container = document.getElementById('leaderboard-dead');
         container.innerHTML = '';
 
-        sorted.slice(0, 5).forEach((m, index) => {
-            const secondsDead = m.combat?.totalTimeSpentDead || 0;
-            const name = m.friendName || "Unknown"; // Direct Backend Mapping
-            
+        sorted.slice(0, 5).forEach((p, index) => {
             // Format M:SS
-            const mins = Math.floor(secondsDead / 60);
-            const secs = secondsDead % 60;
+            const mins = Math.floor(p.timeDead / 60);
+            const secs = p.timeDead % 60;
             const timeStr = `${mins}:${secs.toString().padStart(2, '0')}`;
 
             container.innerHTML += `
                 <div class="lb-row">
                     <div>
                         <span class="lb-rank">#${index + 1}</span>
-                        <span class="lb-name">${name}</span>
+                        <span class="lb-name">${p.name}</span>
                     </div>
                     <span class="lb-score-dead">${timeStr}</span>
+                </div>
+            `;
+        });
+    }
+
+    // --- LEADERBOARD: VISION SCORE ---
+    function updateVisionLeaderboard(matches) {
+        const stats = {};
+        matches.forEach(m => {
+            const name = m.friendName || "Unknown";
+            const score = Number(m.vision_and_social?.visionScore) || 0;
+            stats[name] = (stats[name] || 0) + score;
+        });
+
+        const sorted = Object.entries(stats)
+            .map(([name, score]) => ({ name, score }))
+            .sort((a, b) => b.score - a.score);
+
+        const container = document.getElementById('leaderboard-vision');
+        container.innerHTML = '';
+
+        sorted.slice(0, 5).forEach((p, index) => {
+            container.innerHTML += `
+                <div class="lb-row">
+                    <div>
+                        <span class="lb-rank">#${index + 1}</span>
+                        <span class="lb-name">${p.name}</span>
+                    </div>
+                    <span class="lb-score">${p.score}</span>
                 </div>
             `;
         });
@@ -911,10 +953,10 @@
             const name = m.friendName || "Unknown";
             const mk = m.combat?.multikills || {};
             if (mkStats[name]) {
-                mkStats[name].double += (mk.double || 0);
-                mkStats[name].triple += (mk.triple || 0);
-                mkStats[name].quadra += (mk.quadra || 0);
-                mkStats[name].penta += (mk.penta || 0);
+                mkStats[name].double += Number(mk.double || 0);
+                mkStats[name].triple += Number(mk.triple || 0);
+                mkStats[name].quadra += Number(mk.quadra || 0);
+                mkStats[name].penta += Number(mk.penta || 0);
             }
         });
 

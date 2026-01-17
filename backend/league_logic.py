@@ -1,6 +1,7 @@
 import datetime
 import json
 from decimal import Decimal
+from zoneinfo import ZoneInfo
 
 import requests
 
@@ -52,9 +53,8 @@ def get_match_details(match_id, routing_region, target_puuid, api_key, friend_na
     participants = info.get("participants", [])
 
     creation_ms = info.get("gameCreation", 0)
-    game_date_str = datetime.datetime.fromtimestamp(creation_ms / 1000).strftime(
-        "%Y-%m-%d"
-    )
+    dt_utc = datetime.datetime.fromtimestamp(creation_ms / 1000, datetime.timezone.utc)
+    game_date_str = dt_utc.astimezone(ZoneInfo("US/Pacific")).strftime("%Y-%m-%d")
 
     for p in participants:
         if p["puuid"] == target_puuid:
