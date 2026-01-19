@@ -295,6 +295,105 @@
             border-bottom: 1px solid #463714;
             padding-bottom: 10px;
         }
+
+        /* --- Split Section (Graveyard + Positions) --- */
+        .split-section {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        /* --- Monster Graveyard --- */
+        .graveyard-section {
+            background-color: var(--card-bg);
+            border: 1px solid var(--hextech-gold);
+            padding: 20px;
+            border-radius: 4px;
+        }
+        
+        .graveyard-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            margin-top: 15px;
+        }
+
+        .monster-icon {
+            width: 36px;
+            height: 36px;
+            transition: transform 0.2s;
+            cursor: help;
+            filter: drop-shadow(0 0 2px rgba(0,0,0,0.5));
+        }
+        
+        .monster-icon:hover {
+            transform: scale(1.2);
+            z-index: 10;
+        }
+
+        /* --- Position Stats --- */
+        .positions-section {
+            background-color: var(--card-bg);
+            border: 1px solid var(--hextech-gold);
+            padding: 20px;
+            border-radius: 4px;
+        }
+
+        .positions-grid-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 15px;
+        }
+
+        .pos-stat-card {
+            background: rgba(0,0,0,0.2);
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #333;
+        }
+
+        .pos-name {
+            font-size: 0.85em;
+            font-weight: bold;
+            color: var(--hextech-gold);
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        .pos-chart {
+            display: flex;
+            gap: 6px;
+            height: 80px;
+            align-items: flex-end;
+        }
+
+        .pos-col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 24px;
+            height: 100%;
+            justify-content: flex-end;
+        }
+
+        .pos-bar {
+            width: 100%;
+            background-color: var(--hextech-blue);
+            transition: height 0.5s;
+            min-height: 1px;
+            opacity: 0.8;
+        }
+
+        .pos-icon {
+            width: 20px;
+            height: 20px;
+            margin-top: 4px;
+            opacity: 0.6;
+        }
     </style>
 </head>
 <body>
@@ -357,6 +456,22 @@
         </div>
         <div id="champion-grid" class="mastery-grid">
             Loading Library...
+        </div>
+    </div>
+
+    <div class="split-section">
+        <div class="graveyard-section">
+            <div class="mastery-header">
+                <span>Epic Monster Graveyard</span>
+                <span id="graveyard-count">Dragons: 0 | Barons: 0</span>
+            </div>
+            <div id="graveyard-grid" class="graveyard-grid"></div>
+        </div>
+        <div class="positions-section">
+            <div class="mastery-header">
+                <span>Role Preference (Classic)</span>
+            </div>
+            <div id="positions-grid" class="positions-grid-container"></div>
         </div>
     </div>
 
@@ -429,6 +544,8 @@
             updateVisionLeaderboard(matches);
             updatePingsLeaderboard(matches);
             renderChampionCollection(matches);
+            renderMonsterGraveyard(matches);
+            renderPositionStats(matches);
             renderCharts(matches);
             renderGrid(matches);
 
@@ -610,24 +727,27 @@
         matches.forEach(m => {
             const name = m.friendName || "Unknown";
             const score = Number(m.vision_and_social?.visionScore) || 0;
-            stats[name] = (stats[name] || 0) + score;
+            if (!stats[name]) stats[name] = { total: 0, games: 0 };
+            stats[name].total += score;
+            stats[name].games++;
         });
 
         const sorted = Object.entries(stats)
-            .map(([name, score]) => ({ name, score }))
-            .sort((a, b) => b.score - a.score);
+            .map(([name, data]) => ({ name, total: data.total, games: data.games }))
+            .sort((a, b) => b.total - a.total);
 
         const container = document.getElementById('leaderboard-vision');
         container.innerHTML = '';
 
         sorted.slice(0, 5).forEach((p, index) => {
+            const avg = (p.total / p.games).toFixed(1);
             container.innerHTML += `
                 <div class="lb-row">
                     <div>
                         <span class="lb-rank">#${index + 1}</span>
                         <span class="lb-name">${p.name}</span>
                     </div>
-                    <span class="lb-score">${p.score}</span>
+                    <span class="lb-score">${p.total} <span style="font-size: 0.8em; color: var(--text-dim);">(${avg})</span></span>
                 </div>
             `;
         });
@@ -1044,6 +1164,88 @@
 
         document.getElementById('collection-count').innerText = 
             `${unlockedCount} / ${sortedChamps.length} Played`;
+    }
+
+    // --- MONSTER GRAVEYARD ---
+    function renderMonsterGraveyard(matches) {
+        const container = document.getElementById('graveyard-grid');
+        container.innerHTML = '';
+
+        let totalDragons = 0;
+        let totalBarons = 0;
+
+        matches.forEach(m => {
+            const name = m.friendName || "Unknown";
+            const champ = m.metadata?.championName || "Unknown";
+            const rawPos = m.metadata?.teamPosition || "Unknown";
+            const pos = rawPos.charAt(0).toUpperCase() + rawPos.slice(1).toLowerCase();
+            
+            const dragons = Number(m.objectives?.dragonKills || 0);
+            const barons = Number(m.objectives?.baronKills || 0);
+
+            const addIcon = (src, count) => {
+                for (let i = 0; i < count; i++) {
+                    const img = document.createElement('img');
+                    img.className = 'monster-icon';
+                    img.src = src;
+                    img.title = `${name} (${champ}) - ${pos}`;
+                    container.appendChild(img);
+                }
+            };
+
+            if (dragons > 0) { addIcon("https://raw.communitydragon.org/latest/game/assets/ux/minimap/icons/dragon.png", dragons); totalDragons += dragons; }
+            if (barons > 0) { addIcon("https://raw.communitydragon.org/latest/game/assets/ux/minimap/icons/baron.png", barons); totalBarons += barons; }
+        });
+        
+        document.getElementById('graveyard-count').innerText = 
+            `Dragons: ${totalDragons} | Barons: ${totalBarons}`;
+    }
+
+    // --- POSITION STATS ---
+    function renderPositionStats(matches) {
+        const container = document.getElementById('positions-grid');
+        container.innerHTML = '';
+
+        const stats = {};
+        matches.forEach(m => {
+            if (m.metadata?.gameMode !== 'CLASSIC') return;
+            const name = m.friendName || "Unknown";
+            const pos = m.metadata?.teamPosition;
+            if (!stats[name]) stats[name] = { TOP:0, JUNGLE:0, MIDDLE:0, BOTTOM:0, UTILITY:0 };
+            if (stats[name][pos] !== undefined) stats[name][pos]++;
+        });
+
+        const positions = ['TOP', 'JUNGLE', 'MIDDLE', 'BOTTOM', 'UTILITY'];
+        const icons = {
+            'TOP': 'icon-position-top.png',
+            'JUNGLE': 'icon-position-jungle.png',
+            'MIDDLE': 'icon-position-middle.png',
+            'BOTTOM': 'icon-position-bottom.png',
+            'UTILITY': 'icon-position-utility.png'
+        };
+
+        Object.entries(stats).forEach(([name, counts]) => {
+            const max = Math.max(...Object.values(counts)) || 1;
+            const card = document.createElement('div');
+            card.className = 'pos-stat-card';
+            
+            let html = `<div class="pos-name">${name}</div><div class="pos-chart">`;
+            
+            positions.forEach(p => {
+                const count = counts[p];
+                const heightPct = (count / max) * 100;
+                const iconUrl = `https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-clash/global/default/assets/images/position-selector/positions/${icons[p]}`;
+                
+                html += `
+                    <div class="pos-col">
+                        <div class="pos-bar" style="height: ${heightPct}%;" title="${p}: ${count}"></div>
+                        <img src="${iconUrl}" class="pos-icon" title="${p}" />
+                    </div>`;
+            });
+            html += `</div>`;
+            card.innerHTML = html;
+            container.appendChild(card);
+        });
     }
 
     // Run
